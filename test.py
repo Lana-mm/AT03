@@ -1,24 +1,28 @@
 import pytest
-from main import get_weather
+from main import get_random_cat_image
+import requests
+from unittest.mock import patch
 
 
-def test_get_weather(mocker):
-    mock_get = mocker.patch('main.requests.get')
-    mock_get.return_value.status_code = 200
-    mock_get.return_value.json.return_value = {
-        'weather': [{'description': 'clear sky'}],
-        'main': {'temp': 273.15}
-    }
+def test_get_random_cat_image_success():
+    # Настраиваем мока для успешного ответа
+    with patch('requests.get') as mock_get:
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.json.return_value = [{'url': 'https://example.com/cat.jpg'}]
 
-    api_key = '01d50d241915f5d850574139c275f457'
-    city = 'London'
-    weather_data = get_weather(api_key, city)
+        result = get_random_cat_image()
 
-    assert weather_data == {
-        'weather': [{'description': 'clear sky'}],
-        'main': {'temp': 273.15}
-    }
+        assert result == 'https://example.com/cat.jpg'
+        mock_get.assert_called_once_with("https://api.thecatapi.com/v1/images/search")
 
 
+def test_get_random_cat_image_failure():
+    # Настраиваем мока для неуспешного ответа
+    with patch('requests.get') as mock_get:
+        mock_get.return_value.status_code = 404
+        mock_get.return_value.json.return_value = None
 
+        result = get_random_cat_image()
 
+        assert result is None
+        mock_get.assert_called_once_with("https://api.thecatapi.com/v1/images/search")
